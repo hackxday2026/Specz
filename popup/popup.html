@@ -25,6 +25,12 @@
         padding: 0;
       }
 
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+      }
+
       body {
         width: 380px;
         font-family:
@@ -34,6 +40,8 @@
         color: var(--text-main);
         background-color: var(--bg-color);
         line-height: 1.5;
+        border-radius: 16px;
+        overflow: hidden;
       }
 
       header {
@@ -46,6 +54,21 @@
         border-bottom: 1px solid var(--card-border);
       }
 
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 15px;
+      }
+
+      .app {
+        width: 380px;
+        background-color: var(--bg-color);
+        border-radius: 20px;
+        overflow: hidden;
+      }
+
       .brand-logo {
         display: flex;
         align-items: center;
@@ -53,17 +76,18 @@
         font-weight: 700;
         font-size: 16px;
         letter-spacing: -0.5px;
-        background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #ffffff;
       }
 
       .header-actions {
-        display: flex;
-        gap: 8px;
+        margin-left: auto;
       }
 
+      #slogo {
+        width: 20px;
+        height: 20px;
+      }
+      
       .btn {
         padding: 6px 12px;
         border-radius: 8px;
@@ -336,40 +360,42 @@
     </style>
   </head>
   <body>
-    <header>
-      <div class="brand-logo">
-        <span>⚡ Specz Nepal</span>
-      </div>
-      <div class="header-actions">
-        <button id="analyzeBtn" class="btn btn-primary">🔍 Re-Analyze</button>
-      </div>
-    </header>
+    <div class="app">
+      <div class="header">
+        <div class="brand-logo">
+          <img src="../assets/icons/icon32.png" id="slogo" alt="Specz Nepal" />
+          <span>Specz</span>
+        </div>
 
-    <nav>
-      <button id="tabCompare" class="tab-btn active" data-tab="compare">
-        Compare
-      </button>
-      <button id="tabAI" class="tab-btn" data-tab="ai">AI Insights</button>
-      <button id="tabSaved" class="tab-btn" data-tab="saved">Wishlist</button>
-    </nav>
-
-    <main>
-      <div id="statusNote" class="status-note">Initializing…</div>
-
-      <div id="loading" class="status-box">
-        <div class="spinner"></div>
-        <p>Analyzing laptop specs & price deals…</p>
+        <div class="header-actions">
+          <button id="analyzeBtn" class="btn btn-primary">Re-Analyze</button>
+        </div>
       </div>
 
-      <div id="error" class="hidden error-box"></div>
+      <nav>
+        <button id="tabCompare" class="tab-btn active" data-tab="compare">
+          Compare
+        </button>
+        <button id="tabAI" class="tab-btn" data-tab="ai">AI Insights</button>
+        <button id="tabSaved" class="tab-btn" data-tab="saved">Wishlist</button>
+      </nav>
 
-      <div id="compareView" class="hidden"></div>
-      <div id="aiView" class="hidden"></div>
-      <div id="savedView" class="hidden">
-        <div id="savedList"></div>
+      <main>
+
+        <div id="loading" class="status-box">
+          <div class="spinner"></div>
+          <p>Analyzing laptop specs & price deals…</p>
+        </div>
+
+        <div id="error" class="hidden error-box"></div>
+
+        <div id="compareView" class="hidden"></div>
+        <div id="aiView" class="hidden"></div>
+        <div id="savedView" class="hidden">
+          <div id="savedList"></div>
+        </div>
+      </main>
       </div>
-    </main>
-
     <script src="popup.js"></script>
   </body>
 </html>

@@ -6,28 +6,23 @@ try {
     "./utils/storage.js"
   );
 } catch (e) {
-  console.error("❌ importScripts failed:", e);
+  console.error("importScripts failed:", e);
 }
 
-console.log("✅ Specz Worker Running");
+console.log("Specz Worker Running");
 
-// ✅ MESSAGE LISTENER
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === "PRODUCT_DATA") {
     handleProduct(msg.payload, msg.forceRefresh)
       .then(sendResponse)
       .catch(err => {
-        console.error("❌ handleProduct crash:", err);
+        console.error("handleProduct crash:", err);
         sendResponse(fallback(msg.payload));
       });
 
     return true;
   }
 });
-
-//////////////////////////////////////////////////////////
-// 🚀 MAIN PIPELINE
-//////////////////////////////////////////////////////////
 
 async function handleProduct(product, forceRefresh = false) {
   try {
@@ -37,19 +32,18 @@ async function handleProduct(product, forceRefresh = false) {
 
     const cacheKey = `specz_v4_${product.title}`;
 
-    // 🔹 CACHE
+    //Cache
     if (!forceRefresh) {
       const cached = await getStorage(cacheKey);
       if (cached) return cached;
     }
 
-
-    // 🔹 AI / REGEX STRUCTURING
+    //AI structuring
     const structured = await normalizeTitleSafe(product.title);
     structured.rawTitle = product.title;
 
-    // 🔹 FETCH DATA
-    const competitors = await fetchCompetitors();
+    //Fetch data
+    const competitors = await fetchCompetitors(product);
 
     const normalizedCompetitors = (competitors || []).map(item => ({
       title: item.title || "",
@@ -58,10 +52,10 @@ async function handleProduct(product, forceRefresh = false) {
       url: item.url || "#"
     }));
 
-    // 🔹 MATCH
+    //Match
     const matches = matchProducts(structured, normalizedCompetitors);
 
-    // 🔹 CHEAPEST
+    //Cheapest
     const cheapest = (matches.length > 0 ? getCheapest(matches) : null) || {
       title: product.title,
       price: product.price,
@@ -69,13 +63,12 @@ async function handleProduct(product, forceRefresh = false) {
       url: product.url || "#"
     };
 
-
-    // 🔹 SAVINGS
+    //Savings
     const originalPrice = Number(product.price) || 0;
     const cheapestPrice = Number(cheapest.price) || originalPrice;
     const savings = calcSavings(originalPrice, cheapestPrice);
 
-    // 🔹 AI ANALYSIS (PARALLEL SAFE)
+    //AI analysis
     const [valueAnalysis, review] = await Promise.allSettled([
       analyzeValueSafe(product, cheapest),
       generateReviewSafe(structured)
@@ -101,50 +94,63 @@ async function handleProduct(product, forceRefresh = false) {
       review: safeReview
     };
 
-    // 🔹 CACHE STORE (non-blocking)
+    //Cache storage
     setStorage(cacheKey, result).catch(() => {});
 
     return result;
 
   } catch (err) {
-    console.error("❌ Worker Error:", err);
+    console.error("Worker Error:", err);
     return fallback(product);
   }
 }
 
-//////////////////////////////////////////////////////////
-// 🌐 DATA LAYER
-//////////////////////////////////////////////////////////
+//Scraper aAPI + Mock JSON fallback
 
-async function fetchCompetitors() {
+async function fetchCompetitors(product) {
   try {
     const results = await Promise.allSettled([
-      fetchAPI("/api/daraz"),
-      fetchAPI("/api/itti"),
+      fetchLiveScrape(product),
       fetchMock()
     ]);
 
-    const items = results
-      .filter(r => r.status === "fulfilled" && Array.isArray(r.value))
-      .flatMap(r => r.value);
+    const liveItems = results[0].status === "fulfilled" && Array.isArray(results[0].value) ? results[0].value : [];
+    const mockItems = results[1].status === "fulfilled" && Array.isArray(results[1].value) ? results[1].value : [];
 
-    return items.length > 0 ? items : await fetchMock();
+    // Merge live scraped products with fallback mock data, avoiding duplicate URLs/Titles
+    const combined = [...liveItems];
+    const seenUrls = new Set(liveItems.map(i => i.url).filter(u => u && u !== "#"));
+    const seenTitles = new Set(liveItems.map(i => (i.title || "").toLowerCase().trim()));
 
+    for (const item of mockItems) {
+      const url = item.url || "#";
+      const titleKey = (item.title || "").toLowerCase().trim();
+      if ((url !== "#" && seenUrls.has(url)) || (titleKey && seenTitles.has(titleKey))) {
+        continue;
+      }
+      combined.push(item);
+    }
+
+    return combined.length > 0 ? combined : mockItems;
   } catch (e) {
     console.error("❌ fetchCompetitors failed:", e);
     return await fetchMock();
   }
 }
 
-async function fetchAPI(endpoint) {
+async function fetchLiveScrape(product) {
   try {
-    const res = await fetch(`http://localhost:3000${endpoint}`);
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    return await res.json();
-
+    if (!product || !product.title) return [];
+    const res = await fetch("http://localhost:3000/api/compare", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentProduct: product })
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.products) ? data.products : [];
   } catch (e) {
+    console.log("ℹ️ Backend server offline or scrape error, falling back to mock JSON");
     return [];
   }
 }
@@ -159,10 +165,7 @@ async function fetchMock() {
   }
 }
 
-//////////////////////////////////////////////////////////
-// 🧰 HELPERS
-//////////////////////////////////////////////////////////
-
+//Helpers
 function getCheapest(list) {
   if (!list || !list.length) return null;
 
@@ -186,6 +189,6 @@ function fallback(product) {
     cheapest: { ...p, source: "Current Page" },
     savings: 0,
     valueAnalysis: "No comparison data available for this product.",
-    review: "Open a laptop page on Daraz, ITTI, Hukut, or Oliz to analyze deals."
+    review: "Open a laptop page on Daraz, ITTI, Hukut, Oliz, or Evo Store to analyze deals."
   };
 }

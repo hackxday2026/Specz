@@ -1,11 +1,7 @@
-// popup.js - Specz Extension
-
 let currentData = null;
 const STORAGE_KEY = "savedDeals";
 
-// -------------------------
 // DOM Elements
-// -------------------------
 const tabCompare = document.getElementById("tabCompare");
 const tabAI = document.getElementById("tabAI");
 const tabSaved = document.getElementById("tabSaved");
@@ -20,9 +16,7 @@ const statusNote = document.getElementById("statusNote");
 const errorBox = document.getElementById("error");
 const analyzeBtn = document.getElementById("analyzeBtn");
 
-// -------------------------
 // Helper Functions
-// -------------------------
 function escapeHtml(text) {
   return String(text ?? "")
     .replace(/&/g, "&amp;")
@@ -96,9 +90,7 @@ function saveStorage(data) {
   });
 }
 
-// -------------------------
 // Navigation Tabs
-// -------------------------
 function openTab(tab) {
   [tabCompare, tabAI, tabSaved].forEach(btn => btn?.classList.remove("active"));
   [compareView, aiView, savedView].forEach(view => view?.classList.add("hidden"));
@@ -121,9 +113,7 @@ tabAI?.addEventListener("click", () => openTab("ai"));
 tabSaved?.addEventListener("click", () => openTab("saved"));
 analyzeBtn?.addEventListener("click", () => analyzeProduct(true));
 
-// -------------------------
 // Extract Product from Tab
-// -------------------------
 async function extractProductFromTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
@@ -166,16 +156,13 @@ async function extractProductFromTab() {
   throw new Error("Please open a product page on Daraz, ITTI, Hukut, or Oliz.");
 }
 
-// -------------------------
 // Analyze Product Pipeline
-// -------------------------
 async function analyzeProduct(forceRefresh = false) {
   try {
     errorBox.classList.add("hidden");
     loading.classList.remove("hidden");
     compareView.classList.add("hidden");
     aiView.classList.add("hidden");
-    statusNote.textContent = "Scanning active tab...";
 
     const product = await extractProductFromTab();
 
@@ -183,7 +170,6 @@ async function analyzeProduct(forceRefresh = false) {
       throw new Error("No product details detected on this page.");
     }
 
-    statusNote.textContent = "Comparing Nepal stores...";
 
     const result = await chrome.runtime.sendMessage({
       type: "PRODUCT_DATA",
@@ -198,7 +184,6 @@ async function analyzeProduct(forceRefresh = false) {
     };
 
     loading.classList.add("hidden");
-    statusNote.textContent = "Comparison ready";
 
     renderCompare();
     renderAI();
@@ -233,9 +218,7 @@ async function analyzeProduct(forceRefresh = false) {
   }
 }
 
-// -------------------------
 // Render Compare Tab
-// -------------------------
 function renderCompare() {
   if (!currentData) return;
 
@@ -258,7 +241,7 @@ function renderCompare() {
     html += `
       <div class="card deal-hero">
         <div class="card-title" style="color: #10b981;">
-          <span>🏆 Best Deal Available</span>
+          <span>Best Deal Available</span>
           <span class="savings-tag">Save ${savings}%</span>
         </div>
         <div style="font-size: 16px; font-weight: 700; color: #f8fafc; margin-top: 4px;">
@@ -303,7 +286,7 @@ function renderCompare() {
   html += `
     </div>
     <button id="saveDealBtn" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px;">
-      ❤️ Save to Wishlist
+      <img src="../assets/icons/heart.png" alt="Save" style="width: 16px; height: 16px; margin-right: 4px;">Save to Wishlist
     </button>
   `;
 
@@ -321,9 +304,7 @@ function renderCompare() {
   });
 }
 
-// -------------------------
 // Render AI Tab
-// -------------------------
 async function renderAI() {
   if (!currentData) return;
 
@@ -336,7 +317,7 @@ async function renderAI() {
 
   let html = `
     <div class="card">
-      <div class="card-title">🤖 AI Spec Breakdown</div>
+      <div class="card-title">AI Spec Breakdown</div>
       <div class="spec-grid">
         <div class="spec-item">
           <div class="spec-label">Brand</div>
@@ -362,31 +343,22 @@ async function renderAI() {
     </div>
 
     <div class="card">
-      <div class="card-title" style="color: #60a5fa;">💡 Value Verdict</div>
+      <div class="card-title" style="color: #60a5fa;"> Value Verdict</div>
       <div style="font-size: 12px; color: var(--text-main); line-height: 1.5;">${renderMarkdown(valueAnalysis)}</div>
     </div>
 
     <div class="card">
-      <div class="card-title" style="color: #a78bfa;">📝 Specz Review Summary</div>
+      <div class="card-title" style="color: #a78bfa;">Specz Review Summary</div>
       <div style="font-size: 12px; color: var(--text-main); line-height: 1.5;">${renderMarkdown(review)}</div>
     </div>
 
-
-    <div class="api-config">
-      <div style="font-weight: 600; font-size: 11px; color: var(--text-muted);">
-        ⚡ Groq AI Key: ${apiKey ? '✅ Active (Local Storage)' : '⚠️ Not found in storage'}
-      </div>
-      ${!apiKey ? '<div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">Set via: <code>chrome.storage.local.set({ groqApiKey: "gsk_..." })</code></div>' : ''}
-    </div>
   `;
 
   aiView.innerHTML = html;
 }
 
 
-// -------------------------
 // Wishlist Logic
-// -------------------------
 async function saveDeal() {
   if (!currentData) return;
 
@@ -428,14 +400,16 @@ async function renderSaved() {
       <div style="flex: 1; margin-right: 10px;">
         <div style="font-weight: 600; font-size: 12px; color: var(--text-main);">
           ${item.url && item.url !== "#"
-            ? `<a href="#" class="saved-link text-link" data-url="${escapeHtml(item.url)}" title="Open Product Page">${escapeHtml(item.title)}</a>`
+            ? `<a href="#" class="saved-link text-link" data-url="${escapeHtml(item.url)}" title="Open Product Page">${escapeHtml(item.title)} </a>`
             : escapeHtml(item.title)}
         </div>
         <div style="font-size: 12px; color: #60a5fa; font-weight: 700; margin-top: 2px;">
           Rs ${Number(item.price).toLocaleString()}
         </div>
       </div>
-      <button class="btn-delete" data-index="${idx}"><img src="../assets/icons/delete.png" alt="Delete" /></button>
+      <button class="btn-delete" data-index="${idx}">
+        <img src="../assets/icons/del.png" alt="Delete" style="width: 16px; height: 16px;">
+      </button>
     </div>
   `).join("");
 
